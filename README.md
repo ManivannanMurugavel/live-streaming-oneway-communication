@@ -24,6 +24,6 @@ http://localhost/live-streaming-oneway-communication
 Create a new sender and receiver and send the message
 
 ### Note:
-This is one way communication.
-The sender only send message
-The receiver only receive the message
+This is one way communication.<br>
+The sender only send message.<br>
+The receiver only receive the message.
