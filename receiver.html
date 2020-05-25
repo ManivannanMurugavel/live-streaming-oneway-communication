@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Receiver - Live Stream</title>
+
+
+<link rel="stylesheet" href="assets/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+<!-- JS, Popper.js, and jQuery -->
+<script src="assets/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="assets/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="assets/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<style type="text/css">
+	body{
+		background-image: url(assets/cbimage.jpg);
+	}
+	.header{
+		height: 100px;
+		text-align: center;
+		line-height: 100px;
+		background-color: #fff;
+	}
+	.header h1,.header h2{
+		line-height: 100px;
+	}
+	.receiver{
+		width : 100%;
+		padding: 0px 100px;
+	}
+	.chat{
+		background-color: #006e80d6;
+	    margin: 15px 0px;
+	    font-size: 20px;
+	    padding: 5px 20px;
+	    color: white;
+	    text-align: right;
+	}
+	.message{
+		width: 100%;
+	}
+	.name h3{
+		height: 50px;
+		line-height: 50px;
+		text-align: center;
+	}
+</style>
+</head>
+<body>
+	<div class="header">
+		<h1>Live Streaming - One Way Communication</h1>
+	</div>
+	<div class="name">
+		<h3 id="username">No Name</h3>
+	</div>
+	<div class="">
+		<div class="col-12">
+			<div class="container">
+				<div class="row">
+					<div class="receiver">
+						<div class="message float-right">
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+</body>
+<script id="message-template" type="text/x-custom-template">
+    <div class="chat">
+		<div class="text">
+			${meesageText}
+			<svg class="bi bi-chat" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<path fill-rule="evenodd" d="M2.678 11.894a1 1 0 01.287.801 10.97 10.97 0 01-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 01.71-.074A8.06 8.06 0 008 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 01-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 00.244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 01-2.347-.306c-.52.263-1.639.742-3.468 1.105z" clip-rule="evenodd"/>
+			</svg>
+		</div>
+		<div class="user">
+			${userName}
+				<svg class="bi bi-person" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		     		<path fill-rule="evenodd" d="M13 14s1 0 1-1-1-4-6-4-6 3-6 4 1 1 1 1h10zm-9.995-.944v-.002.002zM3.022 13h9.956a.274.274 0 00.014-.002l.008-.002c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664a1.05 1.05 0 00.022.004zm9.974.056v-.002.002zM8 7a2 2 0 100-4 2 2 0 000 4zm3-2a3 3 0 11-6 0 3 3 0 016 0z" clip-rule="evenodd"/>
+				</svg>
+		</div>
+	</div>
+</script>
+<script src="assets/jquery.min.js"></script>
+<script type="text/javascript">
+	var template = $('#message-template').html();
+	var serverIP = "http://manivannan.local.com:5000/";
+	var getUserName = function(token){
+		$.get(serverIP+"getusername?token="+token+"&type=receiver",function(data){
+			if(data === "error"){
+				return
+			}
+			console.log("username")
+			console.log(data);
+			$("#username").text(data);
+		})
+	}
+	var getParams = function (url) {
+		var params = {};
+		var parser = document.createElement('a');
+		parser.href = url;
+		var query = parser.search.substring(1);
+		var vars = query.split('&');
+		for (var i = 0; i < vars.length; i++) {
+			var pair = vars[i].split('=');
+			params[pair[0]] = decodeURIComponent(pair[1]);
+		}
+		return params;
+	};
+	params = getParams(window.location.href)
+	var getLiveMessage = function(){
+		var source = new EventSource(serverIP+"/receivemessage/"+params['token']);
+		// console.log('live stream')
+		source.onmessage = function(event) {
+			console.log("stream");
+			console.log(event);
+			streamdata = JSON.parse(event['data'])
+			name = streamdata['name']
+			message = streamdata['message']
+			newtemplate = template.replace(/\$\{meesageText\}/,message)
+			newtemplate = newtemplate.replace(/\$\{userName\}/,name)
+			$(".message").append(newtemplate);
+		}
+	}
+	$(document).ready(function(){
+		if('token' in params){
+			getUserName(params['token'])
+			getLiveMessage();
+		}
+	})
+</script>
+</html>

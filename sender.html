@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sender - Live Stream</title>
+
+
+<link rel="stylesheet" href="assets/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+<!-- JS, Popper.js, and jQuery -->
+<script src="assets/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="assets/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="assets/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<style type="text/css">
+	body{
+		background-image: url(assets/cbimage.jpg);
+	}
+	.header{
+		height: 100px;
+		text-align: center;
+		line-height: 100px;
+		background-color: #fff;
+	}
+	.header h1,.header h2{
+		line-height: 100px;
+	}
+	.center{
+		width: 100%;
+		/*height: 200px;*/
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		position: fixed;
+	}
+	.message{
+		height: 400px;
+		background-color: #ffffff;
+		text-align: center;
+	}
+	.sender .header{
+		background-color: #800035d6;
+		margin-top: -20px;
+		color: white;
+	}
+	.send{
+		background-color: #355365;
+	    border: none;
+	    color: white;
+	    padding: 10px 0px;
+	    text-align: center;
+	    text-decoration: none;
+	    display: inline-block;
+	    font-size: 20px;
+	    margin: 10px 0px 0px;
+	    cursor: pointer;
+	    width: 100%;
+	    font-weight: bold;
+	}
+	.textalert{
+		color: red;
+	}
+	.name h3{
+		height: 50px;
+		line-height: 50px;
+		text-align: center;
+	}
+</style>
+</head>
+<body>
+	<div class="header">
+		<h1>Live Streaming - One Way Communication</h1>
+	</div>
+	<div class="name">
+		<h3 id="username">No Name</h3>
+	</div>
+	<div class="center">
+		<div class="col-12">
+			<div class="container">
+				<div class="row">
+					<div class="col-3"></div>
+					<div class="col-6 sender message">
+						<div class="header">
+							<h2>Send Message</h2>
+						</div>
+						<div style="padding: 40px 20px 20px;">
+							<select name="cars" class="custom-select" id="selectreceiver">
+							    <option value="0">Select Receiver</option>
+							  </select>
+						</div>
+						<div style="padding: 0px 20px;">
+					        <textarea class="form-control" rows="5" id="comment"></textarea>
+					        <span class="textalert"></span>
+					    </div>
+					    <div style="padding: 0px 20px;">
+					    	<button class="send">Send</button>
+					    </div>
+					</div>
+					<div class="col-3"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+</body>
+<script src="assets/jquery.min.js"></script>
+<script type="text/javascript">
+	var serverIP = "http://manivannan.local.com:5000/";
+	console.log('live stream')
+	var getUserName = function(token){
+		$.get(serverIP+"getusername?token="+token+"&type=sender",function(data){
+			if(data === "error"){
+				return
+			}
+			console.log("username")
+			console.log(data);
+			$("#username").text(data);
+		})
+	}
+
+	var source = new EventSource(serverIP+"/getlivereceiver");
+	var getLiveReceiver = function(){
+		// console.log('live stream')
+		source.onmessage = function(event) {
+			console.log("stream");
+			console.log(event);
+			streamdata = JSON.parse(event['data'])
+			$.each(streamdata,function(key){
+				$("#selectreceiver").append('<option value="'+key+'">'+streamdata[key]+'</option>')
+			})
+		}
+	}
+	var getAllReceivers = function(token){
+		$.get(serverIP+"getallreceiver?token="+token,function(data){
+			console.log("all receivers")
+			console.log(data)
+			if(data === "error"){
+				alert("sender doesn't exists")
+				return
+			}
+			$.each(data,function(key){
+				$("#selectreceiver").append('<option value="'+key+'">'+data[key]+'</option>')
+			})
+			getLiveReceiver();
+		})
+	}
+	var getParams = function (url) {
+		var params = {};
+		var parser = document.createElement('a');
+		parser.href = url;
+		var query = parser.search.substring(1);
+		var vars = query.split('&');
+		for (var i = 0; i < vars.length; i++) {
+			var pair = vars[i].split('=');
+			params[pair[0]] = decodeURIComponent(pair[1]);
+		}
+		return params;
+	};
+	params = getParams(window.location.href)
+	$(document).ready(function(){
+		console.log($(window).height())
+		if('token' in params){
+			getAllReceivers(params['token']);
+			getUserName(params['token'])
+		}
+		$(".send").click(function(){
+			$(".textalert").text("");
+			comment = $("#comment").val();
+			senderToken = params['token']
+			receiverToken = $("#selectreceiver").val();
+			if(comment.trim() == ""){
+				$(".textalert").text("enter comment");
+				return
+			}
+			else if(receiverToken === "0"){
+				alert("Select Receiver")
+				return
+			}
+			$.post(serverIP+"sendmessage",{senderToken:senderToken, receiverToken:receiverToken, message:comment}, function(data){
+				console.log("message sent")
+				console.log(data)
+			})
+			$("#selectreceiver").val(0);
+			$("#comment").val("");
+		})
+	})
+</script>
+</html>
